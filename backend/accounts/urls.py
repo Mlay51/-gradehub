@@ -18,5 +18,6 @@ urlpatterns = [
     path('auth/me/', views.me_view, name='me'),
     path('exams/<int:exam_id>/enter-marks/', views.enter_marks, name='enter-marks'),
     path('exams/<int:exam_id>/calculate-grades/', views.calculate_exam_grades, name='calculate-grades'),
+    path('students/<int:student_id>/exams/<int:exam_id>/report-card/', views.generate_report_card, name='report-card'),
     path('', include(router.urls)),
 ]

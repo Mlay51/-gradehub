@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import User, Institution, Class, Student, Subject, Exam, Result
-from .services import calculate_grades, log_audit
+from .services import calculate_grades, log_audit, get_grade
 from .models import GradingScale, AuditLog
 from .serializers import GradingScaleSerializer, AuditLogSerializer
 from .serializers import (
@@ -155,3 +155,80 @@ def enter_marks(request, exam_id):
             return Response({'error': str(e)}, status=400)
     calculate_grades(exam_id)
     return Response({'saved': len(saved), 'results': saved})
+
+
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from weasyprint import HTML
+from datetime import date
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def generate_report_card(request, student_id, exam_id):
+    try:
+        student = Student.objects.get(id=student_id)
+        exam = Exam.objects.get(id=exam_id)
+        results = Result.objects.filter(student=student, exam=exam)
+
+        if not results.exists():
+            return Response({'error': 'No results found'}, status=404)
+
+        total_marks = sum(r.marks for r in results)
+        total_possible = sum(r.subject.max_marks for r in results)
+        percentage = round((total_marks / total_possible * 100), 2) if total_possible > 0 else 0
+
+        institution = exam.student_class.institution
+        grade, remarks = get_grade(percentage, institution)
+
+        all_results = Result.objects.filter(exam=exam)
+        student_totals = {}
+        for r in all_results:
+            sid = r.student.id
+            if sid not in student_totals:
+                student_totals[sid] = 0
+            student_totals[sid] += r.marks
+
+        sorted_students = sorted(student_totals.items(), key=lambda x: x[1], reverse=True)
+        rank = next((i + 1 for i, (sid, _) in enumerate(sorted_students) if sid == student_id), 0)
+
+        results_data = []
+        for r in results:
+            sub_percentage = round((r.marks / r.subject.max_marks * 100), 2) if r.subject.max_marks > 0 else 0
+            sub_grade, _ = get_grade(sub_percentage, institution)
+            results_data.append({
+                'subject_name': r.subject.name,
+                'marks': r.marks,
+                'max_marks': r.subject.max_marks,
+                'percentage': sub_percentage,
+                'grade': sub_grade,
+            })
+
+        context = {
+            'institution_name': institution.name,
+            'exam_name': exam.name,
+            'exam_date': exam.date,
+            'student_name': f"{student.first_name} {student.last_name}",
+            'class_name': exam.student_class.name,
+            'gender': student.gender,
+            'total_marks': total_marks,
+            'total_possible': total_possible,
+            'percentage': percentage,
+            'overall_grade': grade,
+            'rank': rank,
+            'total_students': len(sorted_students),
+            'results': results_data,
+            'generated_date': date.today().strftime('%B %d, %Y'),
+        }
+
+        html_string = render_to_string('report_card.html', context)
+        pdf_file = HTML(string=html_string).write_pdf()
+
+        response = HttpResponse(pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="report_card_{student.first_name}_{student.last_name}.pdf"'
+        return response
+
+    except Student.DoesNotExist:
+        return Response({'error': 'Student not found'}, status=404)
+    except Exam.DoesNotExist:
+        return Response({'error': 'Exam not found'}, status=404)
