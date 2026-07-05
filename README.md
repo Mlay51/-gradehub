@@ -20,24 +20,10 @@ A full-stack web application for managing student exams, grades, and report card
 - Parent portal (coming soon)
 - Analytics dashboard (coming soon)
 
-## 🚀 How to Run
 
-### Backend
-```bash
-cd backend
-source ../venv/bin/activate
-python manage.py runserver
-```
 
-### Frontend
-```bash
-cd frontend
-npm run dev
-```
 
 ## 👨‍💻 Developer
 - **Name:** Emmanuel Mlay
 - **GitHub:** Mlay51
 
-## 📋 Project Status
-🟡 In Progress — Phase 4 of 9 complete
