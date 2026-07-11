@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard"
 import Students from "./pages/Students"
 import Exams from "./pages/Exams"
 import MarkEntry from "./pages/MarkEntry"
+import ParentPortal from "./pages/ParentPortal"
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/students" element={<Students />} />
         <Route path="/exams" element={<Exams />} />
         <Route path="/marks" element={<MarkEntry />} />
+        <Route path="/parent" element={<ParentPortal />} />
       </Routes>
     </BrowserRouter>
   )

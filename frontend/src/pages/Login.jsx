@@ -17,7 +17,15 @@ function Login() {
       localStorage.setItem("access", res.data.access)
       localStorage.setItem("refresh", res.data.refresh)
       localStorage.setItem("user", JSON.stringify(res.data.user))
-      navigate("/dashboard")
+      
+      const role = res.data.user.role
+      console.log("User role:", role)
+      
+      if (role === "parent") {
+        navigate("/parent")
+      } else {
+        navigate("/dashboard")
+      }
     } catch (err) {
       setMessage("Invalid credentials. Please try again.")
     } finally {
@@ -26,25 +34,79 @@ function Login() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', Arial, sans-serif" }}>
-      <div style={{ background: "white", padding: "40px", borderRadius: "16px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", width: "100%", maxWidth: "400px" }}>
-        <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <div style={{ fontSize: "60px" }}>🎓</div>
-          <h2 style={{ margin: "8px 0", color: "#333" }}>GradeHub</h2>
-          <p style={{ color: "#888", margin: 0 }}>Sign in to your account</p>
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: "'Segoe UI', Arial, sans-serif"
+    }}>
+      <div style={{
+        background: "white", padding: "48px 40px", borderRadius: "20px",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.2)", width: "100%", maxWidth: "420px"
+      }}>
+        <div style={{ textAlign: "center", marginBottom: "36px" }}>
+          <div style={{ fontSize: "64px", marginBottom: "8px" }}>🎓</div>
+          <h2 style={{ margin: "0 0 8px 0", color: "#333", fontSize: "28px", fontWeight: "700" }}>GradeHub</h2>
+          <p style={{ color: "#888", margin: 0, fontSize: "15px" }}>Sign in to your account</p>
         </div>
-        <div style={{ marginBottom: "16px" }}>
-          <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "500" }}>Username</label>
-          <input type="text" placeholder="Enter your username" value={username} onChange={(e) => setUsername(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} style={{ width: "100%", padding: "12px 16px", border: "2px solid #e0e0e0", borderRadius: "8px", fontSize: "15px", boxSizing: "border-box" }} />
+
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "8px", color: "#555", fontWeight: "600", fontSize: "14px" }}>Username</label>
+          <input
+            type="text"
+            placeholder="Enter your username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+            style={{
+              width: "100%", padding: "13px 16px", border: "2px solid #e0e0e0",
+              borderRadius: "10px", fontSize: "15px", boxSizing: "border-box",
+              outline: "none"
+            }}
+            onFocus={(e) => e.target.style.borderColor = "#667eea"}
+            onBlur={(e) => e.target.style.borderColor = "#e0e0e0"}
+          />
         </div>
-        <div style={{ marginBottom: "24px" }}>
-          <label style={{ display: "block", marginBottom: "6px", color: "#555", fontWeight: "500" }}>Password</label>
-          <input type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} style={{ width: "100%", padding: "12px 16px", border: "2px solid #e0e0e0", borderRadius: "8px", fontSize: "15px", boxSizing: "border-box" }} />
+
+        <div style={{ marginBottom: "28px" }}>
+          <label style={{ display: "block", marginBottom: "8px", color: "#555", fontWeight: "600", fontSize: "14px" }}>Password</label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+            style={{
+              width: "100%", padding: "13px 16px", border: "2px solid #e0e0e0",
+              borderRadius: "10px", fontSize: "15px", boxSizing: "border-box",
+              outline: "none"
+            }}
+            onFocus={(e) => e.target.style.borderColor = "#667eea"}
+            onBlur={(e) => e.target.style.borderColor = "#e0e0e0"}
+          />
         </div>
-        <button onClick={handleLogin} disabled={loading} style={{ width: "100%", padding: "13px", background: loading ? "#ccc" : "linear-gradient(135deg, #667eea, #764ba2)", color: "white", border: "none", borderRadius: "8px", fontSize: "16px", cursor: loading ? "not-allowed" : "pointer", fontWeight: "bold" }}>
+
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          style={{
+            width: "100%", padding: "14px",
+            background: loading ? "#ccc" : "linear-gradient(135deg, #667eea, #764ba2)",
+            color: "white", border: "none", borderRadius: "10px",
+            fontSize: "16px", cursor: loading ? "not-allowed" : "pointer", fontWeight: "600"
+          }}
+        >
           {loading ? "Signing in..." : "Sign In"}
         </button>
-        {message && <div style={{ marginTop: "16px", padding: "12px", background: "#fdecea", borderRadius: "8px", color: "#c62828", textAlign: "center" }}>{message}</div>}
+
+        {message && (
+          <div style={{
+            marginTop: "16px", padding: "12px 16px", background: "#fee2e2",
+            borderRadius: "10px", color: "#dc2626", textAlign: "center", fontSize: "14px"
+          }}>
+            {message}
+          </div>
+        )}
       </div>
     </div>
   )
