@@ -7,12 +7,28 @@ function Exams() {
   const [exams, setExams] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [publishing, setPublishing] = useState(null)
+  const [message, setMessage] = useState("")
   const navigate = useNavigate()
 
   useEffect(() => {
     if (!localStorage.getItem("access")) { navigate("/"); return }
     api.get("/exams/").then((res) => { setExams(res.data); setLoading(false) })
   }, [])
+
+  const handlePublish = async (examId, examName) => {
+    if (!window.confirm(`Publish report cards for "${examName}"? Parents will receive email notifications.`)) return
+    setPublishing(examId)
+    setMessage("")
+    try {
+      const res = await api.post(`/exams/${examId}/publish/`)
+      setMessage(`✅ ${res.data.message}`)
+    } catch (err) {
+      setMessage("❌ Error publishing report cards.")
+    } finally {
+      setPublishing(null)
+    }
+  }
 
   const filtered = exams.filter(e =>
     e.name.toLowerCase().includes(search.toLowerCase())
@@ -38,6 +54,18 @@ function Exams() {
           </button>
         </div>
 
+        {/* Message */}
+        {message && (
+          <div style={{
+            padding: "14px 20px", borderRadius: "10px", marginBottom: "20px",
+            background: message.includes("✅") ? "#dcfce7" : "#fee2e2",
+            color: message.includes("✅") ? "#16a34a" : "#dc2626",
+            fontWeight: "500"
+          }}>
+            {message}
+          </div>
+        )}
+
         {/* Search */}
         <div style={{ background: "white", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", marginBottom: "24px" }}>
           <input
@@ -57,14 +85,14 @@ function Exams() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "linear-gradient(135deg, #667eea, #764ba2)" }}>
-                  {["#", "Exam Name", "Class", "Date", "Action"].map((h) => (
+                  {["#", "Exam Name", "Class", "Date", "Actions"].map((h) => (
                     <th key={h} style={{ padding: "16px 20px", color: "white", textAlign: "left", fontSize: "13px", fontWeight: "600" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((e, i) => (
-                  <tr key={e.id} style={{ borderBottom: "1px solid #f0f0f0", transition: "background 0.2s" }}
+                  <tr key={e.id} style={{ borderBottom: "1px solid #f0f0f0" }}
                     onMouseEnter={(ev) => ev.currentTarget.style.background = "#f8f9ff"}
                     onMouseLeave={(ev) => ev.currentTarget.style.background = "white"}
                   >
@@ -76,13 +104,27 @@ function Exams() {
                       </span>
                     </td>
                     <td style={{ padding: "14px 20px", color: "#666" }}>{e.date}</td>
-                    <td style={{ padding: "14px 20px" }}>
+                    <td style={{ padding: "14px 20px", display: "flex", gap: "8px" }}>
                       <button onClick={() => navigate("/marks")} style={{
-                        padding: "8px 16px", background: "#f0f4ff", color: "#667eea",
+                        padding: "8px 14px", background: "#f0f4ff", color: "#667eea",
                         border: "2px solid #667eea", borderRadius: "8px",
-                        cursor: "pointer", fontSize: "13px", fontWeight: "500"
+                        cursor: "pointer", fontSize: "12px", fontWeight: "500"
                       }}>
-                        📝 Enter Marks
+                        📝 Marks
+                      </button>
+                      <button
+                        onClick={() => handlePublish(e.id, e.name)}
+                        disabled={publishing === e.id}
+                        style={{
+                          padding: "8px 14px",
+                          background: publishing === e.id ? "#e0e0e0" : "linear-gradient(135deg, #43e97b, #38f9d7)",
+                          color: publishing === e.id ? "#999" : "white",
+                          border: "none", borderRadius: "8px",
+                          cursor: publishing === e.id ? "not-allowed" : "pointer",
+                          fontSize: "12px", fontWeight: "500"
+                        }}
+                      >
+                        {publishing === e.id ? "Publishing..." : "📧 Publish & Notify"}
                       </button>
                     </td>
                   </tr>

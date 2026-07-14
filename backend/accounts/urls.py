@@ -13,6 +13,7 @@ router.register(r'grading-scales', views.GradingScaleViewSet)
 router.register(r'audit-logs', views.AuditLogViewSet)
 
 urlpatterns = [
+    path('exams/<int:exam_id>/publish/', views.publish_report_cards, name='publish-report-cards'),
     path('auth/login/', views.login_view, name='login'),
     path('auth/register/', views.register_view, name='register'),
     path('auth/me/', views.me_view, name='me'),

@@ -232,3 +232,96 @@ def generate_report_card(request, student_id, exam_id):
         return Response({'error': 'Student not found'}, status=404)
     except Exam.DoesNotExist:
         return Response({'error': 'Exam not found'}, status=404)
+
+
+
+        from django.core.mail import send_mail
+from django.conf import settings
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def publish_report_cards(request, exam_id):
+    try:
+        exam = Exam.objects.get(id=exam_id)
+        students = exam.student_class.students.all()
+        emails_sent = 0
+        errors = []
+
+        for student in students:
+            if not student.parent:
+                continue
+            parent = student.parent
+            if not parent.email:
+                continue
+
+            results = Result.objects.filter(student=student, exam=exam)
+            if not results.exists():
+                continue
+
+            total_marks = sum(r.marks for r in results)
+            total_possible = sum(r.subject.max_marks for r in results)
+            percentage = round((total_marks / total_possible * 100), 2) if total_possible > 0 else 0
+            institution = exam.student_class.institution
+            grade, remarks = get_grade(percentage, institution)
+
+            all_results = Result.objects.filter(exam=exam)
+            student_totals = {}
+            for r in all_results:
+                sid = r.student.id
+                if sid not in student_totals:
+                    student_totals[sid] = 0
+                student_totals[sid] += r.marks
+            sorted_students = sorted(student_totals.items(), key=lambda x: x[1], reverse=True)
+            rank = next((i + 1 for i, (sid, _) in enumerate(sorted_students) if sid == student.id), 0)
+
+            subject_results = "\n".join([
+                f"  - {r.subject.name}: {r.marks}/{r.subject.max_marks}"
+                for r in results
+            ])
+
+            message = f"""
+Dear {parent.username},
+
+We are pleased to inform you that the report card for {exam.name} has been published for your child.
+
+Student: {student.first_name} {student.last_name}
+Class: {exam.student_class.name}
+Exam: {exam.name}
+
+Results Summary:
+{subject_results}
+
+Total Marks: {total_marks}/{total_possible}
+Percentage: {percentage}%
+Overall Grade: {grade}
+Class Rank: #{rank}
+Remarks: {remarks}
+
+Please login to GradeHub to download the full PDF report card.
+
+Best regards,
+{institution.name}
+GradeHub System
+            """
+
+            try:
+                send_mail(
+                    subject=f"Report Card Published - {student.first_name} {student.last_name} - {exam.name}",
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[parent.email],
+                    fail_silently=False,
+                )
+                emails_sent += 1
+            except Exception as e:
+                errors.append(str(e))
+
+        return Response({
+            'message': f'Report cards published! {emails_sent} email(s) sent successfully.',
+            'emails_sent': emails_sent,
+            'errors': errors
+        })
+
+    except Exam.DoesNotExist:
+        return Response({'error': 'Exam not found'}, status=404)
