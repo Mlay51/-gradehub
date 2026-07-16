@@ -18,7 +18,7 @@ A full-stack web application for managing student exams, grades, and report card
 - Audit logging for mark changes
 - PDF Report card generation 
 - Parent portal 
-- Analytics dashboard
+- Analytics dashboard-1
 
 
 
